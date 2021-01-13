@@ -1,37 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace ProcSearch2
 {
     /// <summary>
     /// Interaktionslogik für MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
         public MainWindow()
         {
             InitializeComponent();
             lblStatus.Text = "Es ist noch kein Datenbestand geladen...";
-            ProcDB.RRChanged += Update;
+            ProcDb.RrChanged += Update;
+            Alias a = Alias.GetInstance;
+            a.Load(Properties.Resources.ALIAS_FILE_NAME);
         }
 
         private async void Menu_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                switch ((string)(e.Source as MenuItem).Uid)
+                switch ((e.Source as MenuItem)?.Uid)
                 {
                     case "oeffnen":
                         await MenuLogic.FileOpen();
@@ -41,12 +37,11 @@ namespace ProcSearch2
                         break;
 
                 }
-                lblStatus.Text = ProcDB.GetInstace.Count.ToString();
-                //   MessageBox.Show((e.Source as MenuItem).Name);
+                lblStatus.Text = ProcDb.GetInstace.Count.ToString();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString());
+                MessageBox.Show(ex.Message);
             }
 
 
@@ -54,11 +49,20 @@ namespace ProcSearch2
 
         private void Update(object sender, EventArgs e)
         {
-            this.Dispatcher.Invoke(() =>
+            if (Dispatcher.CheckAccess())
             {
                 DirectoryChangedEventArgs m = (DirectoryChangedEventArgs)e;
-                lblStatus.Text = m.Counter.ToString() + " Ordner und Unterordner werden durchsucht...";
-            });
+                lblStatus.Text = m.Counter + " Prozeduren wurden geladen...";
+            }
+            else
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    DirectoryChangedEventArgs m = (DirectoryChangedEventArgs)e;
+                    lblStatus.Text = m.Counter + " Prozeduren wurden geladen...";
+                });
+            }
+
 
         }
 
@@ -69,12 +73,8 @@ namespace ProcSearch2
             lstvErgebnisse.Items.Clear();
             try
             {
-
-                //var pr = from p in ProcDB.GetInstace.ProcedureList where p.Name ==  b.Text select p ;
-                // var result = ProcDB.GetInstace.ProcedureList.Where(o => o.Description.Contains(b.Text.ToUpper()));
-
-                var procedures = ProcDB.GetInstace.ProcedureList;
-                char[] separators = new char[] { ',', ';' };
+                var procedures = ProcDb.GetInstace.ProcedureList;
+                char[] separators = { ',', ';' };
                 string[] bb = b.Text.ToUpper().Split(separators);
                 var result = from p in procedures where bb.All(s => p.Description.Contains(s)) select p;
 
@@ -87,17 +87,17 @@ namespace ProcSearch2
                             if ((bool)RadioButton_Approved.IsChecked)
                             {
                                 //Nur freigegebene Anzeigen
-                                if (!proc.IsDraft && !proc.Path.Contains("00") && !proc.Path.Contains("02") && !proc.Path.Contains("pielwies"))
+                                if (!proc.IsDraft && !proc.Path.Contains(Properties.Resources.PathContains_Experimental_Indicator) && !proc.Path.Contains(Properties.Resources.PathContains_Draft_Indicator) && !proc.Path.Contains(Properties.Resources.PathContains_Experimental_Indicator_non_Germany))
                                 {
                                     lstvErgebnisse.Items.Add(proc);
                                     cnt++;
                                 }
 
                             }
-                            else if ((bool)RadioButton_Draft.IsChecked && !proc.Path.Contains("pielwies"))
+                            else if ((bool)RadioButton_Draft.IsChecked && !proc.Path.Contains(Properties.Resources.PathContains_Experimental_Indicator_non_Germany))
                             {
                                 //Entwurf und Freigegebene Anzeigen
-                                if (!proc.Path.Contains("00"))
+                                if (!proc.Path.Contains(Properties.Resources.PathContains_Experimental_Indicator))
                                 {
                                     lstvErgebnisse.Items.Add(proc);
                                     cnt++;
@@ -114,17 +114,17 @@ namespace ProcSearch2
                             if ((bool)RadioButton_Approved.IsChecked)
                             {
                                 //Nur freigegebene Anzeigen
-                                if (!proc.IsDraft && !proc.Path.Contains("00") && !proc.Path.Contains("02") && !proc.IsSub && !proc.Path.Contains("pielwies"))
+                                if (!proc.IsDraft && !proc.Path.Contains(Properties.Resources.PathContains_Experimental_Indicator) && !proc.Path.Contains(Properties.Resources.PathContains_Draft_Indicator) && !proc.IsSub && !proc.Path.Contains(Properties.Resources.PathContains_Experimental_Indicator_non_Germany))
                                 {
                                     lstvErgebnisse.Items.Add(proc);
                                     cnt++;
                                 }
 
                             }
-                            else if ((bool)RadioButton_Draft.IsChecked && !proc.IsSub && !proc.Path.Contains("pielwies"))
+                            else if ((bool)RadioButton_Draft.IsChecked && !proc.IsSub && !proc.Path.Contains(Properties.Resources.PathContains_Experimental_Indicator_non_Germany))
                             {
                                 //Entwurf und Freigegebene Anzeigen
-                                if (!proc.Path.Contains("00"))
+                                if (!proc.Path.Contains(Properties.Resources.PathContains_Experimental_Indicator))
                                 {
                                     lstvErgebnisse.Items.Add(proc);
                                     cnt++;
@@ -139,22 +139,22 @@ namespace ProcSearch2
                     }
                     catch (InvalidOperationException ex)
                     {
-                        MessageBox.Show(ex.StackTrace.ToString());
+                        MessageBox.Show(ex.StackTrace);
                     }
                 }
                 if (cnt == 0)
                 {
-                    lstvErgebnisse.Items.Add("--keine Treffer--  " + DateTime.Now.ToString());
-                    Label_ProceduresInList.Content = cnt.ToString() + " Prozeduren gefunden.";
+                    lstvErgebnisse.Items.Add("--keine Treffer--  " + DateTime.Now);
+                    Label_ProceduresInList.Content = cnt + " Prozeduren gefunden.";
                 }
                 else
                 {
-                    Label_ProceduresInList.Content = cnt.ToString() + " Prozeduren gefunden.";
+                    Label_ProceduresInList.Content = cnt + " Prozeduren gefunden.";
                 }
 
 
             }
-            catch (System.ArgumentException ex)
+            catch (ArgumentException ex)
             {
                 MessageBox.Show(ex.ToString());
             }
@@ -164,7 +164,7 @@ namespace ProcSearch2
 
         private void About_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show(" Eine Prozedursuche von Arnold Szathmary. \n wird 'WIE SIE IST' \n OHNE JEGLICHE GARANTIE, WEDER AUSDRÜCKLICH NOCH STILLSCHWEIGEND, zur Verfügung gestellt,  ");
+            MessageBox.Show(Properties.Resources.Disclaimer);
         }
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
@@ -177,11 +177,11 @@ namespace ProcSearch2
             try
             {
 
-                System.Windows.Controls.ListView l = (System.Windows.Controls.ListView)sender;
+                ListView l = (ListView)sender;
                 if (l.SelectedItem != null && l.SelectedItem.GetType() == typeof(Proc))
                 {
                     string textData = ((Proc)l.SelectedItem).Path;
-                    Clipboard.SetData(DataFormats.Text, (Object)textData);
+                    Clipboard.SetData(DataFormats.Text, textData);
                 }
 
             }
@@ -191,6 +191,21 @@ namespace ProcSearch2
 
             }
 
+        }
+
+        private void Help_OnClick(object sender, RoutedEventArgs e)
+        {
+            Process.Start("anleitung.htm");
+        }
+
+        private async void Speichern_OnClick(object sender, RoutedEventArgs e)
+        {
+          await Task.Run(()=> ProcDb.GetInstace.SaveToFile("data.psdb"));
+        }
+
+        private async void FileOpen_OnClick(object sender, RoutedEventArgs e)
+        {
+          await Task.Run(()=> ProcDb.GetInstace.ReadFromFile("data.psdb"));
         }
     }
 }

@@ -1,48 +1,59 @@
-﻿using System.Dynamic;
-using System.Security.Cryptography;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace ProcSearch2
 {
     public class Proc
     {
+        private Alias _a;
         public Proc()
         {
         }
 
-        private string _Name,_Description,_FileName;
-        private bool _IsDrwaft,_IsSub;
+        public Proc(Alias a)
+        {
+            _a = a;
+        }
+
+        private string _name,_description,_fileName;
+        private bool _isDrwaft,_isSub;
         public string Name
         {
             get
             {
-                return _Name;
+                return _name;
             }
             set
             {
-                _Name = value;
-                string[] v = Regex.Split(_Name, "   *");
-                _FileName = v[0];
-                _Description = v[1].ToUpper();
-                ///
-                /// Hard Kodierte Herstellerbezeichnungen und Aliase
-                ///
-                
-                if (_Description.ToUpper().StartsWith("F:"))
+                _name = value;
+                string[] v = Regex.Split(_name, "   *");
+                _fileName = v[0];
+                _description = v[1].ToUpper();
+
+                if (_a != null)
                 {
-                    _IsDrwaft = false;
-                } else if (_Description.ToUpper().StartsWith("E:"))
+                    foreach (var de in _a.Entries)
+                    {
+                        if (_description.Contains(de.Key.ToUpper()))
+                        {
+                            _description += ", "+de.Value.ToUpper();
+                        }
+                    }
+                }
+                if (_description.ToUpper().StartsWith("F:"))
                 {
-                    _IsDrwaft = true;
+                    _isDrwaft = false;
+                } else if (_description.ToUpper().StartsWith("E:"))
+                {
+                    _isDrwaft = true;
                 }
 
-                if (_Description.ToUpper().StartsWith("SUB"))
+                if (_description.ToUpper().StartsWith("SUB"))
                 {
-                    _IsSub = true;
+                    _isSub = true;
                 }
                 else
                 {
-                    _IsSub = false;
+                    _isSub = false;
                 }
             }
         }
@@ -53,11 +64,17 @@ namespace ProcSearch2
             get;set;
         }
 
+        public long Serial
+        {
+            get;
+            set;
+        }
+
         public string Description
         {
             get
             {
-                return _Description;
+                return _description;
             }
         }
 
@@ -65,7 +82,7 @@ namespace ProcSearch2
         {
             get
             {
-                return _FileName;
+                return _fileName;
             }
         }
 
@@ -73,7 +90,7 @@ namespace ProcSearch2
         {
             get
             {
-                return _IsDrwaft;
+                return _isDrwaft;
             }
         }
 
@@ -81,7 +98,7 @@ namespace ProcSearch2
         {
             get
             {
-                return _IsSub;
+                return _isSub;
             }
         }
 

@@ -9,10 +9,13 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top" HorizontalAlignment="Left" Margin="0,0,0.333,0" MenuItem.Click="Menu_Click" >
             <MenuItem Header="_Datei" Margin="10,1,1,1" >
-                <MenuItem Header="_Öffnen" x:Name="Oeffnen" x:Uid="oeffnen" />
+                <MenuItem Header="Pfad öffnen" x:Name="Oeffnen" x:Uid="oeffnen" />
+                <MenuItem Header="D_atei öffnen" x:Uid="foeffnen" Click="FileOpen_OnClick" IsEnabled="True"></MenuItem>
+                <MenuItem Header="Datei _Speichern" x:Name="Speichern" x:Uid="speichern" Click="Speichern_OnClick" IsEnabled="True"></MenuItem>
                 <MenuItem Header="_Beenden" x:Name="Beenden" x:Uid="beenden" />
             </MenuItem>
             <MenuItem Header="_Hilfe" Click="MenuItem_Click">
+                <MenuItem Header="H_ilfe" x:Name="Help" x:Uid="_Hilfe" Click="Help_OnClick"></MenuItem>
                 <MenuItem Header="_Über" x:Name="About" x:Uid="ueber" Click="About_Click"/>
             </MenuItem>
 

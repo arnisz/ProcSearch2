@@ -1,39 +1,39 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using Microsoft.SqlServer.Server;
+using System.Xml;
+using System.Xml.Serialization;
+
 
 namespace ProcSearch2
 {
-
-    public sealed class ProcDB
+    [Serializable]
+    public sealed class ProcDb
     {
-        public static event EventHandler RRChanged;
+        public static event EventHandler RrChanged;
         private readonly List<DirectoryInfo> _directories= new List<DirectoryInfo>();
-        private readonly List<Proc> _procedureList = new List<Proc>(1024);
-        private readonly static object lockObject = new object();
-        private static volatile ProcDB _instance;
+        private List<Proc> _procedureList = new List<Proc>();
+        private readonly static object LockObject = new object();
+        private static volatile ProcDb _instance;
+        private long _serial;
 
-        private ProcDB()
+        private ProcDb()
         {
         }
 
-        public static ProcDB GetInstace
+        public static ProcDb GetInstace
         {
             get
             {
                 if (_instance == null)
                 {
-                    lock (lockObject)
+                    lock (LockObject)
                     {
                         if (_instance == null)
                         {
-                            _instance = new ProcDB();
+                            _instance = new ProcDb();
+                            _instance._serial = 0;
                         }
                     }
                 }
@@ -42,24 +42,56 @@ namespace ProcSearch2
             }
         }
 
- 
+        public void SaveToFile(string fileName)
+        {
+            using (Stream stream = File.Open(fileName,FileMode.Create,FileAccess.ReadWrite))
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(List<Proc>));
+                XmlTextWriter writer = new XmlTextWriter(stream, Encoding.Default);
+                writer.Formatting = Formatting.Indented;
+                serializer.Serialize(writer,_procedureList);
+                writer.Close();
+            }
+        }
+
+        public void ReadFromFile(string fileName)
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(List<Proc>));
+            using (Stream stream = File.Open(fileName, FileMode.Open,FileAccess.Read))
+            {
+                _procedureList = (List<Proc>) serializer.Deserialize(stream);
+            }
+
+            var m = new DirectoryChangedEventArgs()
+            {
+                Counter = _procedureList.Count
+            };
+
+            if (RrChanged != null) RrChanged(null, m);
+        }
+
+        public void Clear()
+        {
+            _directories.Clear();
+        }
 
 
         public void AddDirectory(DirectoryInfo directoryInfo)
         {
             _directories.Add(directoryInfo);
-            DirectoryChangedEventArgs m = new DirectoryChangedEventArgs()
+            ReadAll(directoryInfo);
+            var m = new DirectoryChangedEventArgs()
             {
                 Counter = this.Count
             };
-            if (RRChanged != null) RRChanged(null, m);
+            if (RrChanged != null) RrChanged(null, m);
             ReadAll(directoryInfo);
         }
 
         public List<DirectoryInfo> Directories => _directories;
         public List<Proc> ProcedureList => _procedureList;
 
-        public int Count => _directories.Count;
+        public long Count => _procedureList.Count;
 
         private void ReadAll(DirectoryInfo directoryInfo)
         {
@@ -71,16 +103,57 @@ namespace ProcSearch2
                 {
                     lock (r)
                     {
-                        while (r.EndOfStream == false)
+                        if (Alias.GetInstance.AliasReadyToUse)
                         {
-                            Proc p = new Proc
+                            while (r.EndOfStream == false)
                             {
-                                Path = directoryInfo.FullName,
-                                Name = r.ReadLine()
-                            };
-                            _procedureList.Add(p);
+                                try
+                                {
+                                    Proc p = new Proc(Alias.GetInstance)
+                                    {
+                                        Path = directoryInfo.FullName,
+                                        Name = r.ReadLine(),
+                                        Serial = _serial
+                                    };
+                                    if (p.Name != null && p.Name.Length > 3 && p.Name.Length < 90)
+                                    {
+                                        _procedureList.Add(p);
+                                        _serial++;
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e+ @" could'nt read th Line, ignore!");
+                                }
+
+
+                            }
                         }
-                        r.Close();
+                        else
+                        {
+                            while (r.EndOfStream == false)
+                            {
+                                try
+                                {
+                                    Proc p = new Proc()
+                                    {
+                                        Path = directoryInfo.FullName,
+                                        Name = r.ReadLine(),
+                                        Serial = _serial
+                                    };
+                                    if (p.Name != null && p.Name.Length > 3 && p.Name.Length < 90)
+                                    {
+                                        _procedureList.Add(p);
+                                        _serial++;
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e + @" could'nt read th Line, ignore!");
+                                }
+
+                            }
+                        }
                     }
                 }
             }

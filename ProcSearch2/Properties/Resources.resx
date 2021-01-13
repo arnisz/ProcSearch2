@@ -114,4 +114,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="PathContains_Experimental_Indicator" xml:space="preserve">
+    <value>00</value>
+    <comment>Persönliche Spielwiesen</comment>
+  </data>
+  <data name="PathContains_Draft_Indicator" xml:space="preserve">
+    <value>02</value>
+    <comment>Entwurf</comment>
+  </data>
+  <data name="PathContains_Experimental_Indicator_non_Germany" xml:space="preserve">
+    <value>pielwies</value>
+    <comment>Spielwiese swiss</comment>
+  </data>
+  <data name="Disclaimer" xml:space="preserve">
+    <value> Eine Prozedursuche von Arnold Szathmary. 
+ wird 'WIE SIE IST' 
+ OHNE JEGLICHE GARANTIE, WEDER AUSDRÜCKLICH NOCH STILLSCHWEIGEND, zur Verfügung gestellt.  </value>
+  </data>
+  <data name="ALIAS_FILE_NAME" xml:space="preserve">
+    <value>alias.txt</value>
+  </data>
 </root>

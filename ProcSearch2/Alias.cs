@@ -1,37 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+
 
 namespace ProcSearch2
 {
     public class Alias
     {
         private static volatile Alias _instance;
-        private readonly static Object lockObject = new object();
-
+        private Dictionary<string, string> _Entries = new Dictionary<string, string>(1024);
+        private readonly static Object LockObject = new object();
+        private bool _aliasReadyToUse;
          
 
         private Alias()
         {
         }
 
-        public static Alias getInstace
+        public static Alias GetInstance
         {
             get
             {
                 if (_instance == null)
                 {
-                    lock (lockObject)
+                    lock (LockObject)
                     {
                         if (_instance == null)
                         {
                             _instance = new Alias();
+                            _instance._aliasReadyToUse = false;
                         }
                     }
                 }
@@ -40,29 +38,39 @@ namespace ProcSearch2
             }
         }
 
-        public Dictionary<string,string> Entries;
+        public Dictionary<string,string> Entries=>_Entries;
 
-        public void Load(string AliasFileName)
+        public bool AliasReadyToUse => _aliasReadyToUse;
+
+        public void Load(string aliasFileName)
         {
-            char[] Separators = new []{':'};
-            StreamReader streamReader = new StreamReader(AliasFileName, Encoding.GetEncoding(codepage: 1252));
-            while (!streamReader.EndOfStream)
+            char[] separators = new []{':'};
+            try
             {
-                string line = streamReader.ReadLine();
-                if (line != null)
+                StreamReader streamReader = new StreamReader(aliasFileName, Encoding.GetEncoding(codepage: 1252));
+                _aliasReadyToUse = true;
+                while (!streamReader.EndOfStream)
                 {
-                    string[] _vs = line.Split(Separators);
-                    string key = _vs[0];
-                    StringBuilder s = new StringBuilder();
-
-                    for (int iterator = 1; iterator < _vs.Length; iterator++)
+                    string line = streamReader.ReadLine();
+                    if (line != null)
                     {
-                        s.Append(_vs[iterator]);
+                        string[] vs = line.Split(separators);
+                        string key = vs[0];
+                        StringBuilder s = new StringBuilder();
+
+                        for (int iterator = 1; iterator < vs.Length; iterator++)
+                        {
+                            s.Append(vs[iterator]);
+                        }
+                        _Entries.Add(key, s.ToString());
                     }
-                    Entries.Add(key,s.ToString());
                 }
+                streamReader.Close();
             }
-            streamReader.Close();
+            catch (FileNotFoundException)
+            {
+                _aliasReadyToUse = false;
+            }
         }
 
     }

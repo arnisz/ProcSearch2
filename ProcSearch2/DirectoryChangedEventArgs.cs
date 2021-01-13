@@ -8,6 +8,6 @@ namespace ProcSearch2
 {
     class DirectoryChangedEventArgs: EventArgs
     {
-        public int Counter;
+        public long Counter;
     }
 }
