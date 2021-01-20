@@ -9,7 +9,7 @@ namespace ProcSearch2
     public class Alias
     {
         private static volatile Alias _instance;
-        private Dictionary<string, string> _Entries = new Dictionary<string, string>(1024);
+        private Dictionary<string, string> _Entries = new Dictionary<string, string>(4096);
         private readonly static Object LockObject = new object();
         private bool _aliasReadyToUse;
          

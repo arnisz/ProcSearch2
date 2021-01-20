@@ -85,7 +85,7 @@ namespace ProcSearch2
                 Counter = this.Count
             };
             if (RrChanged != null) RrChanged(null, m);
-            ReadAll(directoryInfo);
+            //ReadAll(directoryInfo);
         }
 
         public List<DirectoryInfo> Directories => _directories;
