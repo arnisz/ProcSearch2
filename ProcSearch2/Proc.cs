@@ -15,7 +15,7 @@ namespace ProcSearch2
         }
 
         private string _name,_description,_fileName;
-        private bool _isDrwaft,_isSub;
+        private bool _isDraft,_isSub;
         public string Name
         {
             get
@@ -41,10 +41,10 @@ namespace ProcSearch2
                 }
                 if (_description.ToUpper().StartsWith("F:"))
                 {
-                    _isDrwaft = false;
+                    _isDraft = false;
                 } else if (_description.ToUpper().StartsWith("E:"))
                 {
-                    _isDrwaft = true;
+                    _isDraft = true;
                 }
 
                 if (_description.ToUpper().StartsWith("SUB"))
@@ -72,34 +72,23 @@ namespace ProcSearch2
 
         public string Description
         {
-            get
-            {
-                return _description;
-            }
+            get => _description;
         }
 
         public string FileName
         {
-            get
-            {
-                return _fileName;
-            }
+            get => _fileName;
         }
 
         public bool IsDraft
         {
-            get
-            {
-                return _isDrwaft;
-            }
+            get => _isDraft;
         }
 
         public bool IsSub
         {
-            get
-            {
-                return _isSub;
-            }
+            get => _isSub;
+
         }
 
 
